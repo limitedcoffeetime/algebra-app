@@ -1,4 +1,5 @@
 // Main database service - Clean and simple interface for the app
+import { logger } from '@/utils/logger';
 import { getDBConnection, runInTransactionAsync } from './db';
 import { getDummyBatchAndProblemsInput } from './dummyData';
 import { mockDb } from './mockDb';
@@ -9,17 +10,19 @@ import * as userProgressService from './userProgressService';
 // Re-export types
 export * from './schema';
 
-// Check if we should use mock database
-// For now, let's always use mock DB in development to avoid SQLite issues
+// Determine whether to use the in-memory mock DB or the real SQLite implementation.
+// The decision is driven entirely by the EXPO_PUBLIC_USE_MOCK_DB env variable so that
+// behaviour can be toggled at runtime (e.g. on CI or in production builds).
 const USE_MOCK_DB = process.env.EXPO_PUBLIC_USE_MOCK_DB === 'true';
 
 // To use real SQLite:
-// 1. Change USE_MOCK_DB to false
+// 1. Export EXPO_PUBLIC_USE_MOCK_DB=false (or remove the variable entirely)
 // 2. Run: npx expo run:ios (for local build)
 // 3. OR: Create an EAS development build
 
-// To temporarily use mock DB even with a development build:
-// EXPO_PUBLIC_USE_MOCK_DB=true npx expo start
+// When running a bundled binary that would normally use SQLite you can still force the
+// mock implementation with:
+//   EXPO_PUBLIC_USE_MOCK_DB=true npx expo start
 
 // Function to get current database type
 export function getDatabaseType(): 'Mock Database' | 'SQLite' {
@@ -29,16 +32,16 @@ export function getDatabaseType(): 'Mock Database' | 'SQLite' {
 // Database initialization
 export async function initializeDatabase() {
   try {
-    console.log('Initializing database...');
+    logger.info('Initializing database...');
     await getDBConnection(); // This creates tables if they don't exist
 
     // Initialize user progress if it doesn't exist
     await userProgressService.initializeUserProgress();
 
-    console.log('Database initialized successfully');
+    logger.info('Database initialized successfully');
     return true;
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    logger.error('Failed to initialize database:', error);
     return false;
   }
 }
@@ -46,12 +49,12 @@ export async function initializeDatabase() {
 // Seed with dummy data (for development) - Now loads from JSON
 export async function seedDummyData() {
   try {
-    console.log('Seeding dummy data from JSON file...');
+    logger.info('Seeding dummy data from JSON file...');
 
     // Check if we already have data
     const existingBatches = await problemBatchService.getAllProblemBatches();
     if (existingBatches.length > 0) {
-      console.log('Database already has data, skipping seed');
+      logger.info('Database already has data, skipping seed');
       return;
     }
 
@@ -66,9 +69,9 @@ export async function seedDummyData() {
       );
     }
 
-    console.log('Dummy data seeded successfully from JSON file');
+    logger.info('Dummy data seeded successfully from JSON file');
   } catch (error) {
-    console.error('Failed to seed dummy data:', error);
+    logger.error('Failed to seed dummy data:', error);
   }
 }
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { generateProblemBatch } = require('./generateProblems.js');
+const { generateProblemBatch, configureProblemsPerBatch } = require('./generateProblems.js');
 require('dotenv').config();
 
 /**
@@ -21,16 +21,9 @@ async function testGeneration() {
   }
 
   try {
-    // Test a smaller batch for development
-    const originalBatchSize = process.env.PROBLEMS_PER_BATCH;
-    process.env.PROBLEMS_PER_BATCH = '5'; // Small test batch
-
+    // Generate a small batch for development/testing without mutating global env state
+    configureProblemsPerBatch(5);
     const batch = await generateProblemBatch();
-
-    // Restore original batch size
-    if (originalBatchSize) {
-      process.env.PROBLEMS_PER_BATCH = originalBatchSize;
-    }
 
     console.log('\n✅ Test generation successful!');
     console.log('\n📋 Sample Problems:');

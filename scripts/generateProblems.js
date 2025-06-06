@@ -18,8 +18,9 @@ const { S3Client, PutObjectCommand, HeadObjectCommand } = require('@aws-sdk/clie
 const crypto = require('crypto');
 const fs = require('fs');
 
-// Configuration
-const PROBLEMS_PER_BATCH = 5;
+// Configuration – can be overridden via function parameter or the PROBLEMS_PER_BATCH env variable
+let PROBLEMS_PER_BATCH = parseInt(process.env.PROBLEMS_PER_BATCH || '5', 10);
+
 const TARGET_DIFFICULTY_MIX = {
   easy: 40,    // 40% of total batch
   medium: 40,  // 40% of total batch
@@ -67,6 +68,18 @@ const s3Client = new S3Client({
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
   }
 });
+
+/**
+ * Optionally set the number of problems to generate for the next batch. This is mainly
+ * used by automated tests to request a very small batch without mutating global
+ * environment state.
+ * @param {number} count
+ */
+function configureProblemsPerBatch(count) {
+  if (Number.isFinite(count) && count > 0) {
+    PROBLEMS_PER_BATCH = count;
+  }
+}
 
 /**
  * Calculate exact problem counts for each difficulty level
@@ -633,4 +646,4 @@ if (require.main === module) {
   main();
 }
 
-module.exports = { generateProblemBatch, uploadToS3 };
+module.exports = { generateProblemBatch, uploadToS3, configureProblemsPerBatch };
