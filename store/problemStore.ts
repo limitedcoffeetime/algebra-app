@@ -3,6 +3,16 @@ import { ProblemSyncService } from '@/services/problemSyncService';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 
+interface BatchInfo {
+  id: string;
+  generationDate: string;
+  importedAt: string;
+  problemCount: number;
+  completedCount: number;
+  isCurrentBatch: boolean;
+  sourceUrl?: string | null;
+}
+
 interface ProblemStore {
   // State
   currentProblem: Problem | null;
@@ -17,7 +27,7 @@ interface ProblemStore {
   submitAnswer: (userAnswer: string, isCorrect: boolean) => Promise<void>;
   resetProgress: () => Promise<void>;
   forceSync: () => Promise<boolean>;
-  getBatchesInfo: () => Promise<any[]>;
+  getBatchesInfo: () => Promise<BatchInfo[]>;
 }
 
 export const useProblemStore = create<ProblemStore>((set, get) => ({

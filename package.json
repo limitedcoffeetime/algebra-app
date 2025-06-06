@@ -45,10 +45,11 @@
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
     "uuid": "^11.1.0",
-    "zustand": "^5.0.5"
+    "zustand": "^5.0.5",
+    "@aws-sdk/client-s3": "^3.824.0",
+    "openai": "^4.104.0"
   },
   "devDependencies": {
-    "@aws-sdk/client-s3": "^3.824.0",
     "@babel/core": "^7.25.2",
     "@jest/globals": "^30.0.0-beta.3",
     "@types/react": "~19.0.10",
@@ -58,7 +59,6 @@
     "dotenv": "^16.5.0",
     "eslint": "^9.25.0",
     "eslint-config-expo": "~9.2.0",
-    "openai": "^4.104.0",
     "typescript": "~5.8.3"
   },
   "private": true
