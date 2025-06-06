@@ -25,22 +25,15 @@ export class ProblemSyncService {
    * Check if new problems are available and download them
    */
   static async syncProblems(): Promise<boolean> {
-    try {
-      console.log('🔄 Checking for new problems...');
-
+    return this.withErrorHandling('🔄 Checking for new problems...', async () => {
       if (!this.LATEST_URL) {
         console.log('⚠️ No sync URL configured, skipping sync');
         return false;
       }
 
-      // Check what's latest on server
       const latestInfo = await this.fetchLatestInfo();
-      if (!latestInfo) {
-        console.log('❌ Failed to fetch latest info');
-        return false;
-      }
+      if (!latestInfo) return false;
 
-      // Check if we already have this batch
       const lastHash = await AsyncStorage.getItem(this.LAST_HASH_KEY);
       if (lastHash === latestInfo.hash) {
         console.log('✅ Already have latest problems');
@@ -48,7 +41,6 @@ export class ProblemSyncService {
         return false;
       }
 
-      // Download and import new batch
       console.log(`📥 Downloading new batch: ${latestInfo.batchId}`);
       const success = await this.downloadAndImportBatch(latestInfo);
 
@@ -56,56 +48,33 @@ export class ProblemSyncService {
         await AsyncStorage.setItem(this.LAST_HASH_KEY, latestInfo.hash);
         await this.updateLastSyncTime();
         console.log('✅ Successfully synced new problems');
-        return true;
       }
 
-      return false;
-    } catch (error) {
-      console.error('❌ Sync failed:', error);
-      return false;
-    }
+      return success;
+    });
   }
 
   /**
    * Fetch the latest.json info from server
    */
   private static async fetchLatestInfo(): Promise<LatestInfo | null> {
-    try {
-      const response = await fetch(this.LATEST_URL, {
-        method: 'HEAD',
-        cache: 'no-cache'
-      });
-
+    return this.withErrorHandling('Fetching latest info...', async () => {
+      const response = await fetch(this.LATEST_URL, { cache: 'no-cache' });
+      
       if (!response.ok) {
-        console.error('Failed to HEAD latest.json:', response.status);
+        console.error('Failed to fetch latest.json:', response.status);
         return null;
       }
 
-      // Now GET the actual content
-      const getResponse = await fetch(this.LATEST_URL, {
-        cache: 'no-cache'
-      });
-
-      if (!getResponse.ok) {
-        console.error('Failed to GET latest.json:', getResponse.status);
-        return null;
-      }
-
-      const latestInfo: LatestInfo = await getResponse.json();
-      return latestInfo;
-    } catch (error) {
-      console.error('Error fetching latest info:', error);
-      return null;
-    }
+      return await response.json() as LatestInfo;
+    });
   }
 
   /**
    * Download and import a problem batch
    */
   private static async downloadAndImportBatch(latestInfo: LatestInfo): Promise<boolean> {
-    try {
-      console.log(`Downloading batch from: ${latestInfo.url}`);
-
+    return this.withErrorHandling(`Downloading batch from: ${latestInfo.url}`, async () => {
       const response = await fetch(latestInfo.url);
       if (!response.ok) {
         console.error('Failed to download batch:', response.status);
@@ -114,85 +83,78 @@ export class ProblemSyncService {
 
       const batchData: ProblemBatchData = await response.json();
 
-      // Validate the data
-      if (!batchData.problems || !Array.isArray(batchData.problems)) {
+      if (!Array.isArray(batchData.problems)) {
         console.error('Invalid batch data format');
         return false;
       }
 
-      // Import into database and get the result
       const result = await db.importProblemBatch(batchData);
+      const messages = {
+        'SKIPPED_EXISTING': `✅ Batch ${batchData.id} already exists locally - no import needed`,
+        'REPLACED_EXISTING': `✅ Replaced existing batch and imported ${batchData.problems.length} problems`,
+        'IMPORTED_NEW': `✅ Imported new batch with ${batchData.problems.length} problems`
+      };
 
-      // The importProblemBatch now returns meaningful information
-      if (result === 'SKIPPED_EXISTING') {
-        console.log(`✅ Batch ${batchData.id} already exists locally - no import needed`);
-        return false; // No new content was actually imported
-      } else if (result === 'REPLACED_EXISTING') {
-        console.log(`✅ Replaced existing batch and imported ${batchData.problems.length} problems`);
-        return true; // New content was imported
-      } else {
-        console.log(`✅ Imported new batch with ${batchData.problems.length} problems`);
-        return true; // New content was imported
-      }
-    } catch (error) {
-      console.error('Error downloading/importing batch:', error);
-      return false;
-    }
+      console.log(messages[result] || messages['IMPORTED_NEW']);
+      return result !== 'SKIPPED_EXISTING';
+    });
   }
 
   /**
    * Update the last sync timestamp
    */
   private static async updateLastSyncTime(): Promise<void> {
-    try {
+    await this.withErrorHandling('Updating sync time...', async () => {
       const timestamp = new Date().toISOString();
       await AsyncStorage.setItem(this.LAST_SYNC_KEY, timestamp);
-
-      // Also update in database
       await db.updateUserProgress({ lastSyncTimestamp: timestamp });
-    } catch (error) {
-      console.error('Error updating sync time:', error);
-    }
+    });
   }
 
   /**
    * Get last sync timestamp
    */
   static async getLastSyncTime(): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(this.LAST_SYNC_KEY);
-    } catch (error) {
-      console.error('Error getting last sync time:', error);
-      return null;
-    }
+    return this.withErrorHandling('Getting last sync time...', () => 
+      AsyncStorage.getItem(this.LAST_SYNC_KEY)
+    );
   }
 
   /**
    * Force a sync check (for manual testing)
    */
   static async forceSyncCheck(): Promise<boolean> {
-    // Clear the hash to force download
     await AsyncStorage.removeItem(this.LAST_HASH_KEY);
-    return await this.syncProblems();
+    return this.syncProblems();
   }
 
   /**
    * Check if sync is needed (called once per day)
    */
   static async shouldSync(): Promise<boolean> {
-    try {
+    return this.withErrorHandling('Checking if sync needed...', async () => {
       const lastSync = await this.getLastSyncTime();
       if (!lastSync) return true;
 
-      const lastSyncDate = new Date(lastSync);
-      const now = new Date();
-      const hoursSinceSync = (now.getTime() - lastSyncDate.getTime()) / (1000 * 60 * 60);
-
-      // Sync if it's been more than 20 hours (allows for timezone differences)
+      const hoursSinceSync = (Date.now() - new Date(lastSync).getTime()) / (1000 * 60 * 60);
       return hoursSinceSync > 20;
+    }, true); // Default to sync on error
+  }
+
+  /**
+   * Generic error handling wrapper
+   */
+  private static async withErrorHandling<T>(
+    operation: string, 
+    fn: () => Promise<T>, 
+    defaultValue?: T
+  ): Promise<T> {
+    try {
+      return await fn();
     } catch (error) {
-      console.error('Error checking if sync needed:', error);
-      return true; // Default to sync on error
+      console.error(`❌ ${operation} failed:`, error);
+      if (defaultValue !== undefined) return defaultValue;
+      throw error;
     }
   }
 }
