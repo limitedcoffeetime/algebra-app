@@ -1,5 +1,6 @@
 import { db, Problem, UserProgress } from '@/services/database';
-import { ProblemSyncService } from '@/services/problemSyncService';
+import { Logger } from '@/services/logging/Logger';
+import { problemSyncOrchestrator } from '@/services/sync/ProblemSyncOrchestrator';
 import { create } from 'zustand';
 
 interface ProblemStore {
@@ -41,29 +42,29 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
       await db.seedDummy();
 
       // Check for new problems if we should sync
-      const shouldSync = await ProblemSyncService.shouldSync();
+      const shouldSync = await problemSyncOrchestrator.shouldSync();
       if (shouldSync) {
-        console.log('🔄 Checking for new problems...');
+        Logger.sync('Checking for new problems...');
         try {
-          const newProblems = await ProblemSyncService.syncProblems();
-          if (newProblems) {
-            console.log('✅ Downloaded new problems');
+          const result = await problemSyncOrchestrator.syncProblems();
+          if (result.hasNewContent) {
+            Logger.success(`Downloaded new problems: ${result.problemCount} problems`);
           }
         } catch (syncError) {
-          console.error('⚠️ Sync failed but continuing with local data:', syncError);
+          Logger.warn('Sync failed but continuing with local data', { operation: 'INIT_SYNC' });
           // Don't fail initialization if sync fails
         }
       }
 
       // Load user progress
       const progress = await db.getUserProgress();
-      const lastSync = await ProblemSyncService.getLastSyncTime();
+      const lastSync = await problemSyncOrchestrator.getLastSyncTime();
       set({ userProgress: progress, lastSyncTime: lastSync });
 
       // Load first problem
       await get().loadNextProblem();
     } catch (error) {
-      console.error('Initialization error:', error);
+      Logger.error('Initialization error', { operation: 'INIT' });
       set({ error: 'Failed to initialize app' });
     } finally {
       set({ isLoading: false });
@@ -119,12 +120,12 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
   // Force sync
   forceSync: async () => {
     try {
-      const hasNewProblems = await ProblemSyncService.forceSyncCheck();
+      const result = await problemSyncOrchestrator.forceSyncCheck();
       const progress = await db.getUserProgress();
       set({ userProgress: progress });
-      return hasNewProblems;
+      return result.hasNewContent;
     } catch (error) {
-      console.error('Failed to force sync:', error);
+      Logger.error('Failed to force sync', { operation: 'FORCE_SYNC' });
       set({ error: 'Failed to force sync' });
       return false;
     }
