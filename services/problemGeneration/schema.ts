@@ -33,9 +33,13 @@ export function getProblemResponseSchema(problemType: ProblemType, count: number
           type: 'object',
           properties: {
             equation: { type: 'string', description: 'The algebra problem equation' },
+            direction: {
+              type: 'string',
+              description: 'Clear instruction for what to do (e.g., "Solve for x", "Simplify", "Factor")'
+            },
             answer: {
               ...answerSchema,
-              description: 'The solution to the equation',
+              description: 'The solution value only (e.g., "5" not "x = 5")',
             },
             solutionSteps: {
               type: 'array',
@@ -44,7 +48,7 @@ export function getProblemResponseSchema(problemType: ProblemType, count: number
               description: 'Step-by-step solution process',
             },
           },
-          required: ['equation', 'answer', 'solutionSteps'],
+          required: ['equation', 'direction', 'answer', 'solutionSteps'],
           additionalProperties: false,
         },
         minItems: count,

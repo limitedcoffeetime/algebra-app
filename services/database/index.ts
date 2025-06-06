@@ -145,9 +145,9 @@ export const db: IDatabase = USE_MOCK_DB ? mockDb : {
     return null;
   },
 
-  // Submit answer and update progress
+    // Submit answer and update progress
   async submitAnswer(problemId: string, userAnswer: string, isCorrect: boolean) {
-    await runInTransactionAsync(async (db) => {
+    return runInTransactionAsync(async () => {
       // Update the problem first
       await problemService.updateProblem(problemId, {
         isCompleted: true,

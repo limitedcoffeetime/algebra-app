@@ -13,7 +13,8 @@ interface SampleProblemsData {
     id: string;
     batchId: string;
     equation: string;
-    answer: string;
+    direction: string;
+    answer: string | number[];
     solutionSteps: string[];
     difficulty: 'easy' | 'medium' | 'hard';
     problemType: string;
@@ -52,6 +53,7 @@ export const getSampleBatchAndProblemsInput = async () => {
         id: problem.id,
         batchId: problem.batchId,
         equation: problem.equation,
+        direction: problem.direction,
         answer: problem.answer,
         solutionSteps: problem.solutionSteps,
         difficulty: problem.difficulty,
@@ -85,6 +87,7 @@ export const getSampleProblems = async (): Promise<ProblemInput[]> => {
     id: problem.id,
     batchId: problem.batchId,
     equation: problem.equation,
+    direction: problem.direction,
     answer: problem.answer,
     solutionSteps: problem.solutionSteps,
     difficulty: problem.difficulty,

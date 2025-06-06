@@ -2,6 +2,7 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useCollapsible } from 'react-native-fast-collapsible';
 import Animated from 'react-native-reanimated';
+import SmartMathRenderer from './SmartMathRenderer';
 
 interface StepByStepSolutionProps {
   steps: string[];
@@ -46,6 +47,22 @@ const StepByStepSolution: React.FC<StepByStepSolutionProps> = ({
 
 // Individual step component for better modularity
 const SolutionStep: React.FC<{ step: string }> = ({ step }) => {
+  // Check if the step contains math expressions
+  const hasMath = /[x-z]|[\^]|[\+\-\*\/]|=/.test(step);
+
+  if (hasMath) {
+    return (
+      <View style={styles.stepContainer}>
+                                 <SmartMathRenderer
+          text={step}
+          fontSize={16}
+          color="#ffffff"
+          style={styles.stepMath}
+        />
+      </View>
+    );
+  }
+
   return <Text style={styles.solutionStep}>{step}</Text>;
 };
 
@@ -85,6 +102,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#ffffff',
     marginVertical: 3,
+  },
+  stepContainer: {
+    marginVertical: 3,
+  },
+  stepMath: {
+    minHeight: 30,
   },
 });
 

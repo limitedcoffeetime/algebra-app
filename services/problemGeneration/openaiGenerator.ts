@@ -8,6 +8,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export interface GeneratedProblem {
   equation: string;
+  direction: string;
   answer: unknown;
   solutionSteps: string[];
   difficulty: Difficulty;
@@ -28,6 +29,19 @@ export async function generateProblemsWithAI(
 Problem Type Specific Instructions:
 ${typeInstructions.instructions}
 
+CRITICAL DIRECTION AND ANSWER FORMAT:
+- Each problem MUST include a clear "direction" field (e.g., "Solve for x", "Simplify", "Factor")
+- The "answer" field should contain ONLY the solution value (e.g., "5" not "x = 5")
+- For equations like "2x + 3 = 11", direction = "Solve for x", answer = "4"
+- For expressions like "3x + 2x", direction = "Simplify", answer = "5x"
+
+MATH FORMATTING:
+- Use LaTeX formatting for complex math: x^{2}, \\frac{a}{b}, \\sqrt{x}
+- For simple equations, plain text is fine: "2x + 5 = 15"
+- For quadratics: "x^{2} - 4x + 3 = 0" (use braces for exponents)
+- For fractions: "\\frac{x+1}{2} = 5"
+- For roots: "\\sqrt{x+5} = 7"
+
 CRITICAL CONSTRAINT - CALCULATOR-FREE PROBLEMS ONLY:
 - Answers must be integers or simple fractions (like 1/2, 2/3, 3/4, 5/6)
 - NO complex decimals like 1.2839, 2.7182, 0.3333... etc.
@@ -43,7 +57,8 @@ Constraints:
 - Solution steps should be clear and educational
 - Each problem should be unique
 - CRITICAL: Ensure your answer matches the final step of your solution
-- CRITICAL: All answers must be calculator-free (integers or simple fractions only)`;
+- CRITICAL: All answers must be calculator-free (integers or simple fractions only)
+- CRITICAL: Direction must clearly state what to do, answer must be just the value`;
 
   const response = await openai.responses.create({
     model: 'o4-mini-2025-04-16',
@@ -81,6 +96,7 @@ Constraints:
     }
     return {
       equation: p.equation,
+      direction: p.direction || `Solve for x`, // fallback for old data
       answer: p.answer,
       solutionSteps: Array.isArray(p.solutionSteps) ? p.solutionSteps : [p.solutionSteps],
       difficulty,

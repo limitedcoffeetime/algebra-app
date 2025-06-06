@@ -2,6 +2,7 @@ export interface Problem {
   id: string; // UUID, primary key
   batchId: string; // Foreign key to ProblemBatch
   equation: string;
+  direction: string; // e.g., "Solve for x", "Simplify", "Factor"
   answer: string | number | number[]; // Can be array for quadratic solutions
   solutionSteps: string[]; // Stored as JSON string
   difficulty: 'easy' | 'medium' | 'hard';
@@ -59,6 +60,7 @@ CREATE TABLE IF NOT EXISTS Problems (
   id TEXT PRIMARY KEY NOT NULL,
   batchId TEXT NOT NULL,
   equation TEXT NOT NULL,
+  direction TEXT NOT NULL, -- e.g., "Solve for x", "Simplify"
   answer TEXT NOT NULL, -- Store numbers as text to simplify
   solutionSteps TEXT NOT NULL, -- JSON string
   difficulty TEXT NOT NULL CHECK(difficulty IN ('easy', 'medium', 'hard')),

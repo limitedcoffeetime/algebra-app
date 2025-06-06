@@ -18,6 +18,7 @@
       "id": "prob_001",
       "batchId": "batch_sample_001",
       "equation": "2x + 5 = 15",
+      "direction": "Solve for x",
       "answer": "5",
       "solutionSteps": [
         "2x + 5 - 5 = 15 - 5",
@@ -33,6 +34,7 @@
       "id": "prob_002",
       "batchId": "batch_sample_001",
       "equation": "3y - 7 = 14",
+      "direction": "Solve for y",
       "answer": "7",
       "solutionSteps": [
         "3y - 7 + 7 = 14 + 7",
@@ -48,6 +50,7 @@
       "id": "prob_003",
       "batchId": "batch_sample_001",
       "equation": "x^2 - 4 = 0",
+      "direction": "Solve for x",
       "answer": [2, -2],
       "solutionSteps": [
         "x^2 = 4",
@@ -62,6 +65,7 @@
       "id": "prob_004",
       "batchId": "batch_sample_002",
       "equation": "a / 3 = 7",
+      "direction": "Solve for a",
       "answer": "21",
       "solutionSteps": [
         "a / 3 * 3 = 7 * 3",
@@ -75,6 +79,7 @@
       "id": "prob_005",
       "batchId": "batch_sample_002",
       "equation": "b + 9 = 3",
+      "direction": "Solve for b",
       "answer": "-6",
       "solutionSteps": [
         "b + 9 - 9 = 3 - 9",

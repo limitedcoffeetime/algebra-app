@@ -2,7 +2,7 @@ import Button from '@/components/Button';
 import FeedbackSection from '@/components/FeedbackSection';
 import ProblemContainer from '@/components/ProblemContainer';
 import { useProblemStore } from '@/store/problemStore';
-import { isAnswerCorrect } from '@/utils/answerUtils';
+import { isAnswerCorrect } from '@/utils/enhancedAnswerUtils';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Keyboard, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
@@ -33,7 +33,7 @@ export default function Index() {
     Keyboard.dismiss();
 
     // Use the proper validation function that handles expressions correctly
-    const correct = isAnswerCorrect(userAnswer, currentProblem.answer);
+    const correct = await isAnswerCorrect(userAnswer, currentProblem.answer);
 
     setIsCorrect(correct);
     setShowFeedback(true);
