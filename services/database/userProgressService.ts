@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { getDBConnection } from './db';
 import { UserProgress } from './schema';
 
@@ -58,7 +59,7 @@ export async function initializeUserProgress(): Promise<UserProgress> {
     newProgressData.createdAt,
     newProgressData.updatedAt
   );
-  console.log('User progress initialized.');
+  logger.info('User progress initialized.');
   return (await getUserProgress())!;
 }
 
@@ -68,7 +69,7 @@ export async function updateUserProgress(
   const db = await getDBConnection();
   const existingProgress = await getUserProgress();
   if (!existingProgress) {
-    console.warn('UserProgress not found, initializing first.');
+    logger.warn('UserProgress not found, initializing first.');
     await initializeUserProgress();
   }
 
@@ -93,7 +94,7 @@ export async function updateUserProgress(
   }
 
   if (fields.length === 0) {
-    console.log('No fields to update for UserProgress');
+    logger.info('No fields to update for UserProgress');
     return (await getUserProgress())!;
   }
 
@@ -104,7 +105,7 @@ export async function updateUserProgress(
   values.push(USER_PROGRESS_ID);
 
   await db.runAsync(sql, ...values);
-  console.log('User progress updated.');
+  logger.info('User progress updated.');
 
   const updatedProgress = await getUserProgress();
   if (!updatedProgress) {
@@ -140,11 +141,11 @@ export async function resetUserProgress(): Promise<UserProgress> {
         currentTime,
         USER_PROGRESS_ID
     );
-    console.log('User progress has been reset.');
+    logger.info('User progress has been reset.');
 
     let progress = await getUserProgress();
     if (!progress) {
-        console.warn('UserProgress was not found after reset, re-initializing.');
+        logger.warn('UserProgress was not found after reset, re-initializing.');
         progress = await initializeUserProgress();
     }
     return progress;

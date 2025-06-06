@@ -1,8 +1,9 @@
+import { logger } from '@/utils/logger';
 import { getDBConnection, runInTransactionAsync } from './db';
 import {
-    ProblemBatch,
-    ProblemBatchInput,
-    ProblemInput
+  ProblemBatch,
+  ProblemBatchInput,
+  ProblemInput
 } from './schema';
 import { generateId } from './utils';
 
@@ -33,7 +34,7 @@ export async function addProblemBatch(
       batchInput.problemCount,
       importedAt
     );
-    console.log(`Batch ${batchId} inserted.`);
+    logger.info(`Batch ${batchId} inserted.`);
 
     // Insert Problems
     const problemInsertSql = `
@@ -47,7 +48,7 @@ export async function addProblemBatch(
 
     for (const problem of problemsInput) {
       if (problem.batchId !== batchId) {
-        console.warn(`Problem ${problem.id || 'new'} has batchId ${problem.batchId} but should be ${batchId}. Skipping.`);
+        logger.warn(`Problem ${problem.id || 'new'} has batchId ${problem.batchId} but should be ${batchId}. Skipping.`);
         continue;
       }
       const problemId = problem.id || generateId();
@@ -67,7 +68,7 @@ export async function addProblemBatch(
         currentTime, // createdAt
         currentTime  // updatedAt
       );
-      console.log(`Problem ${problemId} for batch ${batchId} inserted.`);
+      logger.info(`Problem ${problemId} for batch ${batchId} inserted.`);
     }
     return batchId;
   });
@@ -85,7 +86,7 @@ export async function importProblemBatch(batchData: {
   // Check if batch with exact same ID already exists
   const existingBatch = await getProblemBatchById(batchData.id);
   if (existingBatch) {
-    console.log(`Batch ${batchData.id} already exists, skipping import`);
+    logger.info(`Batch ${batchData.id} already exists, skipping import`);
     return 'SKIPPED_EXISTING';
   }
 
@@ -103,7 +104,7 @@ export async function importProblemBatch(batchData: {
 
   let isReplacement = false;
   if (existingBatchSameDate) {
-    console.log(`Replacing existing batch ${existingBatchSameDate.id} from same date with newer batch ${batchData.id}`);
+    logger.info(`Replacing existing batch ${existingBatchSameDate.id} from same date with newer batch ${batchData.id}`);
     await deleteProblemBatch(existingBatchSameDate.id);
     isReplacement = true;
   }
@@ -120,7 +121,7 @@ export async function importProblemBatch(batchData: {
     batchId: batchData.id
   }));
 
-  console.log(`Importing ${isReplacement ? 'replacement' : 'new'} batch ${batchData.id} with ${batchData.problems.length} problems`);
+  logger.info(`Importing ${isReplacement ? 'replacement' : 'new'} batch ${batchData.id} with ${batchData.problems.length} problems`);
   await addProblemBatch(batchInput, problemsInput);
 
   return isReplacement ? 'REPLACED_EXISTING' : 'IMPORTED_NEW';
@@ -157,7 +158,7 @@ export async function getAllProblemBatches(): Promise<ProblemBatch[]> {
 export async function deleteProblemBatch(batchId: string): Promise<void> {
     const db = await getDBConnection();
     await db.runAsync('DELETE FROM ProblemBatches WHERE id = ?', batchId);
-    console.log(`Deleted batch ${batchId} and its problems.`);
+    logger.info(`Deleted batch ${batchId} and its problems.`);
 }
 
 /**
@@ -168,5 +169,5 @@ export async function deleteAllProblemBatches(): Promise<void> {
     const db = await getDBConnection();
     await db.runAsync('DELETE FROM Problems'); // Delete problems first due to FK
     await db.runAsync('DELETE FROM ProblemBatches');
-    console.log('All problem batches and problems have been deleted.');
+    logger.info('All problem batches and problems have been deleted.');
 }

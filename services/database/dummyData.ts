@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { getSampleBatchAndProblemsInput, getSampleProblemBatches, getSampleProblems } from './sampleDataLoader';
 import { ProblemBatchInput, ProblemInput } from "./schema";
 
@@ -59,9 +60,9 @@ const initializeLegacyExports = async () => {
     dummyBatchAndProblemsInput.length = 0;
     dummyBatchAndProblemsInput.push(...cachedBatchAndProblemsInput);
 
-    console.log('Sample problems loaded from JSON file');
+    logger.info('Sample problems loaded from JSON file');
   } catch (error) {
-    console.error('Failed to load sample problems from JSON, falling back to empty arrays:', error);
+    logger.error('Failed to load sample problems from JSON, falling back to empty arrays:', error);
   }
 };
 

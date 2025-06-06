@@ -1,3 +1,4 @@
+import { logger } from '@/utils/logger';
 import { isAnswerCorrect } from '../../utils/answerUtils';
 import { getDBConnection } from './db';
 import { Problem } from './schema';
@@ -71,7 +72,7 @@ export async function updateProblem(
   }
 
   if (fields.length === 0) {
-    console.log('No fields to update for problem', problemId);
+    logger.info('No fields to update for problem', problemId);
     return;
   }
 
@@ -84,12 +85,12 @@ export async function updateProblem(
   try {
     const result = await db.runAsync(sql, ...values);
     if (result.changes > 0) {
-        console.log(`Problem ${problemId} updated successfully.`);
+        logger.info(`Problem ${problemId} updated successfully.`);
     } else {
-        console.warn(`Problem ${problemId} not found or no changes made.`);
+        logger.warn(`Problem ${problemId} not found or no changes made.`);
     }
   } catch (error) {
-    console.error(`Error updating problem ${problemId}:`, error);
+    logger.error(`Error updating problem ${problemId}:`, error);
     throw error;
   }
 }
@@ -130,9 +131,9 @@ export async function resetAllProblems(): Promise<void> {
             'UPDATE Problems SET isCompleted = 0, userAnswer = NULL, solutionStepsShown = 0, updatedAt = ?',
             now
         );
-        console.log(`Reset ${result.changes} problems to unsolved state.`);
+        logger.info(`Reset ${result.changes} problems to unsolved state.`);
     } catch (error) {
-        console.error('Error resetting problems:', error);
+        logger.error('Error resetting problems:', error);
         throw error;
     }
 }

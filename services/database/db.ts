@@ -1,8 +1,9 @@
+import { logger } from '@/utils/logger';
 import * as SQLite from 'expo-sqlite';
 import {
-    CREATE_PROBLEM_BATCHES_TABLE,
-    CREATE_PROBLEMS_TABLE,
-    CREATE_USER_PROGRESS_TABLE,
+  CREATE_PROBLEM_BATCHES_TABLE,
+  CREATE_PROBLEMS_TABLE,
+  CREATE_USER_PROGRESS_TABLE,
 } from './schema';
 
 const DATABASE_NAME = 'algebro.db';
@@ -14,30 +15,30 @@ export async function getDBConnection(): Promise<SQLite.SQLiteDatabase> {
     return db;
   }
   try {
-    console.log('Opening SQLite database...');
+    logger.info('Opening SQLite database...');
     db = await SQLite.openDatabaseAsync(DATABASE_NAME);
-    console.log('Database opened successfully.');
+    logger.info('Database opened successfully.');
     await initializeDB(db);
     return db;
   } catch (error) {
-    console.error('Failed to open or initialize database:', error);
+    logger.error('Failed to open or initialize database:', error);
     throw new Error('Failed to open or initialize database');
   }
 }
 
 async function initializeDB(database: SQLite.SQLiteDatabase) {
-  console.log('Initializing database tables...');
+  logger.info('Initializing database tables...');
   await database.execAsync(`
     PRAGMA journal_mode = WAL;
     PRAGMA foreign_keys = ON;
   `);
   await database.execAsync(CREATE_PROBLEM_BATCHES_TABLE);
-  console.log('ProblemBatches table created/verified.');
+  logger.info('ProblemBatches table created/verified.');
   await database.execAsync(CREATE_PROBLEMS_TABLE);
-  console.log('Problems table created/verified.');
+  logger.info('Problems table created/verified.');
   await database.execAsync(CREATE_USER_PROGRESS_TABLE);
-  console.log('UserProgress table created/verified.');
-  console.log('Database initialization complete.');
+  logger.info('UserProgress table created/verified.');
+  logger.info('Database initialization complete.');
 }
 
 // Utility for closing the database if ever needed (e.g., for testing or specific scenarios)
@@ -46,9 +47,9 @@ export async function closeDBConnection(): Promise<void> {
     try {
       await db.closeAsync();
       db = null;
-      console.log('Database connection closed.');
+      logger.info('Database connection closed.');
     } catch (error) {
-      console.error('Failed to close database connection:', error);
+      logger.error('Failed to close database connection:', error);
     }
   }
 }
@@ -64,7 +65,7 @@ export async function runInTransactionAsync<T>(
     await database.execAsync('COMMIT TRANSACTION;');
     return result;
   } catch (error) {
-    console.error('Transaction failed, rolling back:', error);
+    logger.error('Transaction failed, rolling back:', error);
     await database.execAsync('ROLLBACK TRANSACTION;');
     throw error;
   }
