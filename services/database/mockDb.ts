@@ -2,6 +2,7 @@
 import { isAnswerCorrect } from '../../utils/answerUtils';
 import { getDummyBatchAndProblemsInput } from './dummyData';
 import { Problem, ProblemBatch, UserProgress } from './schema';
+import { IDatabase } from './types';
 
 // In-memory storage
 let problems: Problem[] = [];
@@ -68,7 +69,7 @@ async function initializeMockData() {
   }
 }
 
-export const mockDb = {
+export const mockDb: IDatabase = {
   async init() {
     console.log('Initializing mock database...');
     await initializeMockData();
@@ -128,6 +129,7 @@ export const mockDb = {
     if (userProgress) {
       userProgress = { ...userProgress, ...updates };
     }
+    return userProgress as UserProgress;
   },
 
   async resetUserProgress() {

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const { generateProblemBatch, configureProblemsPerBatch } = require('./generateProblems.js');
+require('ts-node/register');
+const { generateProblemBatch, configureProblemsPerBatch } = require('../services/problemGeneration/batchGenerator');
 require('dotenv').config();
 
 /**

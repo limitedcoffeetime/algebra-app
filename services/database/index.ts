@@ -5,6 +5,7 @@ import { getDummyBatchAndProblemsInput } from './dummyData';
 import { mockDb } from './mockDb';
 import * as problemBatchService from './problemBatchService';
 import * as problemService from './problemService';
+import { IDatabase } from './types';
 import * as userProgressService from './userProgressService';
 
 // Re-export types
@@ -76,7 +77,7 @@ export async function seedDummyData() {
 }
 
 // Export the appropriate database implementation
-export const db = USE_MOCK_DB ? mockDb : {
+export const db: IDatabase = USE_MOCK_DB ? mockDb : {
   // Initialize
   init: initializeDatabase,
   seedDummy: seedDummyData,
