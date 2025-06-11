@@ -1,9 +1,10 @@
 import { logger } from '@/utils/logger';
 import * as SQLite from 'expo-sqlite';
 import {
-    CREATE_PROBLEM_BATCHES_TABLE,
-    CREATE_PROBLEMS_TABLE,
-    CREATE_USER_PROGRESS_TABLE,
+  CREATE_ACHIEVEMENTS_TABLE,
+  CREATE_PROBLEM_BATCHES_TABLE,
+  CREATE_PROBLEMS_TABLE,
+  CREATE_USER_PROGRESS_TABLE,
 } from './schema';
 
 const DATABASE_NAME = 'algebro.db';
@@ -29,6 +30,7 @@ export async function getDBConnection(): Promise<SQLite.SQLiteDatabase> {
     await db.execAsync(CREATE_PROBLEM_BATCHES_TABLE);
     await db.execAsync(CREATE_PROBLEMS_TABLE);
     await db.execAsync(CREATE_USER_PROGRESS_TABLE);
+    await db.execAsync(CREATE_ACHIEVEMENTS_TABLE);
 
     logger.info('Database initialized successfully');
 

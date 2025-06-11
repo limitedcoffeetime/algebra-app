@@ -38,8 +38,26 @@ export interface UserProgress {
   problemsAttempted: number;
   problemsCorrect: number;
   lastSyncTimestamp?: string | null; // ISO 8601 for S3 sync
+  // Streak tracking fields
+  currentStreak: number; // Current consecutive days with correct answers
+  longestStreak: number; // Best streak achieved
+  lastStreakDate?: string | null; // ISO date (YYYY-MM-DD) of last streak activity
+  streakFreezeUsed: boolean; // Whether user has used their weekly streak freeze
+  lastStreakFreezeDate?: string | null; // When streak freeze was last used
   createdAt: string;
   updatedAt: string;
+}
+
+// Achievement system
+export interface Achievement {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Emoji or icon identifier
+  type: 'streak' | 'accuracy' | 'volume' | 'mastery';
+  requirement: number; // The threshold to unlock
+  unlockedAt?: string | null; // ISO timestamp when achieved
+  isUnlocked: boolean;
 }
 
 // Statistics for accuracy broken down by problem type
@@ -89,8 +107,26 @@ CREATE TABLE IF NOT EXISTS UserProgress (
   problemsAttempted INTEGER NOT NULL DEFAULT 0,
   problemsCorrect INTEGER NOT NULL DEFAULT 0,
   lastSyncTimestamp TEXT,
+  currentStreak INTEGER NOT NULL DEFAULT 0,
+  longestStreak INTEGER NOT NULL DEFAULT 0,
+  lastStreakDate TEXT,
+  streakFreezeUsed INTEGER NOT NULL DEFAULT 0,
+  lastStreakFreezeDate TEXT,
   createdAt TEXT NOT NULL,
   updatedAt TEXT NOT NULL,
   FOREIGN KEY (currentBatchId) REFERENCES ProblemBatches(id) ON DELETE SET NULL
+);
+`;
+
+export const CREATE_ACHIEVEMENTS_TABLE = `
+CREATE TABLE IF NOT EXISTS Achievements (
+  id TEXT PRIMARY KEY NOT NULL,
+  name TEXT NOT NULL,
+  description TEXT NOT NULL,
+  icon TEXT NOT NULL,
+  type TEXT NOT NULL CHECK(type IN ('streak', 'accuracy', 'volume', 'mastery')),
+  requirement INTEGER NOT NULL,
+  unlockedAt TEXT,
+  isUnlocked INTEGER NOT NULL DEFAULT 0
 );
 `;

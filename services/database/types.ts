@@ -1,4 +1,4 @@
-import { Problem, ProblemBatch, UserProgress } from './schema';
+import { Achievement, Problem, ProblemBatch, UserProgress } from './schema';
 
 export type ImportResult = 'SKIPPED_EXISTING' | 'REPLACED_EXISTING' | 'IMPORTED_NEW';
 
@@ -39,6 +39,12 @@ export interface IDatabase {
   getUserProgress(): Promise<UserProgress | null>;
   updateUserProgress(updates: Partial<UserProgress>): Promise<UserProgress>;
   resetUserProgress(): Promise<UserProgress | void>;
+
+  /* Achievement operations */
+  getAllAchievements(): Promise<Achievement[]>;
+  getUnlockedAchievements(): Promise<Achievement[]>;
+  insertOrIgnoreAchievement(achievement: Achievement): Promise<void>;
+  unlockAchievement(achievementId: string, unlockedAt: string): Promise<void>;
 
   /* Convenience helpers */
   getNextProblem(): Promise<Problem | null>;

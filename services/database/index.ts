@@ -5,6 +5,7 @@ import { getDummyBatchAndProblemsInput } from './dummyData';
 import { mockDb } from './mockDb';
 import * as problemBatchService from './problemBatchService';
 import * as problemService from './problemService';
+import { Achievement } from './schema';
 import { IDatabase } from './types';
 import * as userProgressService from './userProgressService';
 
@@ -107,6 +108,86 @@ export const db: IDatabase = USE_MOCK_DB ? mockDb : {
     await problemService.resetAllProblems();
     // Reset user progress stats
     return await userProgressService.resetUserProgress();
+  },
+
+  // Achievements
+  async getAllAchievements(): Promise<Achievement[]> {
+    try {
+      const database = await getDBConnection();
+      const rows = await database.getAllAsync('SELECT * FROM Achievements ORDER BY type, requirement');
+      return rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        icon: row.icon,
+        type: row.type,
+        requirement: row.requirement,
+        unlockedAt: row.unlockedAt,
+        isUnlocked: Boolean(row.isUnlocked),
+      }));
+    } catch (error) {
+      logger.error('Failed to get all achievements:', error);
+      return [];
+    }
+  },
+
+  async getUnlockedAchievements(): Promise<Achievement[]> {
+    try {
+      const database = await getDBConnection();
+      const rows = await database.getAllAsync(
+        'SELECT * FROM Achievements WHERE isUnlocked = 1 ORDER BY unlockedAt DESC'
+      );
+      return rows.map((row: any) => ({
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        icon: row.icon,
+        type: row.type,
+        requirement: row.requirement,
+        unlockedAt: row.unlockedAt,
+        isUnlocked: true,
+      }));
+    } catch (error) {
+      logger.error('Failed to get unlocked achievements:', error);
+      return [];
+    }
+  },
+
+  async insertOrIgnoreAchievement(achievement: Achievement): Promise<void> {
+    try {
+      const database = await getDBConnection();
+      await database.runAsync(
+        `INSERT OR IGNORE INTO Achievements 
+         (id, name, description, icon, type, requirement, unlockedAt, isUnlocked)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          achievement.id,
+          achievement.name,
+          achievement.description,
+          achievement.icon,
+          achievement.type,
+          achievement.requirement,
+          achievement.unlockedAt,
+          achievement.isUnlocked ? 1 : 0,
+        ]
+      );
+    } catch (error) {
+      logger.error('Failed to insert achievement:', error);
+      throw error;
+    }
+  },
+
+  async unlockAchievement(achievementId: string, unlockedAt: string): Promise<void> {
+    try {
+      const database = await getDBConnection();
+      await database.runAsync(
+        'UPDATE Achievements SET isUnlocked = 1, unlockedAt = ? WHERE id = ?',
+        [unlockedAt, achievementId]
+      );
+    } catch (error) {
+      logger.error('Failed to unlock achievement:', error);
+      throw error;
+    }
   },
 
   // Utility function to get next problem for user

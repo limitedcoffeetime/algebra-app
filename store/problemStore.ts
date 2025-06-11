@@ -1,5 +1,6 @@
 import { db, Problem, UserProgress } from '@/services/database';
 import { ProblemSyncService } from '@/services/problemSyncService';
+import { StreakService } from '@/services/streakService';
 import { logger } from '@/utils/logger';
 import { create } from 'zustand';
 
@@ -20,6 +21,8 @@ interface ProblemStore {
   isLoading: boolean;
   error: string | null;
   lastSyncTime: string | null;
+  recentAchievements: any[]; // Recently unlocked achievements
+  streakMessage: string;
 
   // Actions
   initialize: () => Promise<void>;
@@ -28,6 +31,7 @@ interface ProblemStore {
   resetProgress: () => Promise<void>;
   forceSync: () => Promise<boolean>;
   getBatchesInfo: () => Promise<BatchInfo[]>;
+  dismissAchievements: () => void;
 }
 
 export const useProblemStore = create<ProblemStore>((set, get) => ({
@@ -37,6 +41,8 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
   isLoading: false,
   error: null,
   lastSyncTime: null,
+  recentAchievements: [],
+  streakMessage: '',
 
   // Initialize the app
   initialize: async () => {
@@ -47,6 +53,9 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
       if (!success) {
         throw new Error('Failed to initialize database');
       }
+
+      // Initialize achievements
+      await StreakService.initializeAchievements();
 
       // Seed dummy data for development
       await db.seedDummy();
@@ -69,7 +78,15 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
       // Load user progress
       const progress = await db.getUserProgress();
       const lastSync = await ProblemSyncService.getLastSyncTime();
-      set({ userProgress: progress, lastSyncTime: lastSync });
+      
+      // Generate streak message
+      const streakMessage = progress ? StreakService.getStreakMessage(progress.currentStreak) : '';
+      
+      set({ 
+        userProgress: progress, 
+        lastSyncTime: lastSync,
+        streakMessage
+      });
 
       // Load first problem
       await get().loadNextProblem();
@@ -105,9 +122,28 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
     try {
       await db.submitAnswer(currentProblem.id, userAnswer, isCorrect);
 
+      // Update streak if user got it correct
+      const { streakChanged, newStreak, achievementsUnlocked } = await StreakService.updateStreak(isCorrect);
+      
       // Refresh user progress
       const progress = await db.getUserProgress();
-      set({ userProgress: progress, error: null });
+      const streakMessage = progress ? StreakService.getStreakMessage(progress.currentStreak) : '';
+      
+      set({ 
+        userProgress: progress, 
+        error: null,
+        streakMessage,
+        recentAchievements: achievementsUnlocked.length > 0 ? achievementsUnlocked : get().recentAchievements
+      });
+
+      // Log streak changes
+      if (streakChanged) {
+        logger.info(`🔥 Streak ${isCorrect ? 'extended' : 'reset'}: ${newStreak} days`);
+      }
+
+      if (achievementsUnlocked.length > 0) {
+        logger.info(`🏆 Unlocked ${achievementsUnlocked.length} achievements!`);
+      }
     } catch (error) {
       logger.error('Failed to submit answer:', error);
       set({ error: 'Failed to save answer' });
@@ -184,5 +220,10 @@ export const useProblemStore = create<ProblemStore>((set, get) => ({
       logger.error('Failed to get batches info:', error);
       return [];
     }
+  },
+
+  // Dismiss achievements
+  dismissAchievements: () => {
+    set({ recentAchievements: [] });
   }
 }));

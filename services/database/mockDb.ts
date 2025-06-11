@@ -2,12 +2,13 @@
 import { logger } from '@/utils/logger';
 import { isAnswerCorrect } from '../../utils/enhancedAnswerUtils';
 import { getDummyBatchAndProblemsInput } from './dummyData';
-import { Problem, ProblemBatch, UserProgress } from './schema';
+import { Achievement, Problem, ProblemBatch, UserProgress } from './schema';
 import { IDatabase } from './types';
 
 // In-memory storage
 let problems: Problem[] = [];
 let batches: ProblemBatch[] = [];
+let achievements: Achievement[] = [];
 let userProgress: UserProgress | null = null;
 let isInitialized = false;
 
@@ -50,6 +51,11 @@ async function initializeMockData() {
       currentBatchId: batches[0]?.id || null,
       problemsAttempted: 0,
       problemsCorrect: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastStreakDate: null,
+      streakFreezeUsed: false,
+      lastStreakFreezeDate: null,
       createdAt: now,
       updatedAt: now
     };
@@ -64,6 +70,11 @@ async function initializeMockData() {
       currentBatchId: null,
       problemsAttempted: 0,
       problemsCorrect: 0,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastStreakDate: null,
+      streakFreezeUsed: false,
+      lastStreakFreezeDate: null,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -139,6 +150,11 @@ export const mockDb: IDatabase = {
     if (userProgress) {
       userProgress.problemsAttempted = 0;
       userProgress.problemsCorrect = 0;
+      userProgress.currentStreak = 0;
+      userProgress.longestStreak = 0;
+      userProgress.lastStreakDate = null;
+      userProgress.streakFreezeUsed = false;
+      userProgress.lastStreakFreezeDate = null;
     }
 
     // Also reset all problems back to unsolved
@@ -352,5 +368,34 @@ export const mockDb: IDatabase = {
       oldestBatch: generationDates.length > 0 ? generationDates.sort()[0] : null,
       newestBatch: generationDates.length > 0 ? generationDates.sort().reverse()[0] : null
     };
-  }
+  },
+
+  // Achievements
+  async getAllAchievements(): Promise<Achievement[]> {
+    await initializeMockData();
+    return [...achievements]; // Return a copy
+  },
+
+  async getUnlockedAchievements(): Promise<Achievement[]> {
+    await initializeMockData();
+    return achievements.filter(a => a.isUnlocked);
+  },
+
+  async insertOrIgnoreAchievement(achievement: Achievement): Promise<void> {
+    await initializeMockData();
+    // Check if achievement already exists
+    const existingIndex = achievements.findIndex(a => a.id === achievement.id);
+    if (existingIndex === -1) {
+      achievements.push(achievement);
+    }
+  },
+
+  async unlockAchievement(achievementId: string, unlockedAt: string): Promise<void> {
+    await initializeMockData();
+    const achievement = achievements.find(a => a.id === achievementId);
+    if (achievement) {
+      achievement.isUnlocked = true;
+      achievement.unlockedAt = unlockedAt;
+    }
+  },
 };
